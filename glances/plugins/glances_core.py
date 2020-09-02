@@ -2,7 +2,7 @@
 #
 # This file is part of Glances.
 #
-# Copyright (C) 2018 Nicolargo <nicolas@nicolargo.com>
+# Copyright (C) 2019 Nicolargo <nicolas@nicolargo.com>
 #
 # Glances is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -32,9 +32,9 @@ class Plugin(GlancesPlugin):
     stats is integer (number of core)
     """
 
-    def __init__(self, args=None):
+    def __init__(self, args=None, config=None):
         """Init the plugin."""
-        super(Plugin, self).__init__(args=args)
+        super(Plugin, self).__init__(args=args, config=config)
 
         # We dot not want to display the stat in the curse interface
         # The core number is displayed by the load plugin

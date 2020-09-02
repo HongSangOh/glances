@@ -2,7 +2,7 @@
 #
 # This file is part of Glances.
 #
-# Copyright (C) 2018 Nicolargo <nicolas@nicolargo.com>
+# Copyright (C) 2019 Nicolargo <nicolas@nicolargo.com>
 #
 # Glances is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -18,10 +18,11 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 """File system plugin."""
+from __future__ import unicode_literals
 
 import operator
 
-from glances.compat import u, nativestr
+from glances.compat import u, nativestr, n
 from glances.plugins.glances_plugin import GlancesPlugin
 
 import psutil
@@ -69,9 +70,10 @@ class Plugin(GlancesPlugin):
     stats is a list
     """
 
-    def __init__(self, args=None):
+    def __init__(self, args=None, config=None):
         """Init the plugin."""
         super(Plugin, self).__init__(args=args,
+                                     config=config,
                                      items_history_list=items_history_list,
                                      stats_init_value=[])
 
@@ -97,7 +99,7 @@ class Plugin(GlancesPlugin):
             # and ignore all others (e.g. memory partitions such as /dev/shm)
             try:
                 fs_stat = psutil.disk_partitions(all=False)
-            except UnicodeDecodeError:
+            except (UnicodeDecodeError, PermissionError):
                 return self.stats
 
             # Optionnal hack to allow logicals mounts points (issue #448)
@@ -112,7 +114,8 @@ class Plugin(GlancesPlugin):
             # Loop over fs
             for fs in fs_stat:
                 # Do not take hidden file system into account
-                if self.is_hide(fs.mountpoint):
+                # Also check device name (see issue #1606)
+                if self.is_hide(fs.mountpoint) or self.is_hide(fs.device):
                     continue
                 # Grab the disk usage
                 try:
@@ -161,7 +164,11 @@ class Plugin(GlancesPlugin):
                         'used': used,
                         'percent': percent,
                         'key': self.get_key()}
-                    stats.append(fs_current)
+                    # Do not take hidden file system into account
+                    if self.is_hide(fs_current['mnt_point']):
+                        continue
+                    else:
+                        stats.append(fs_current)
             else:
                 # Default behavior
                 for fs in fs_stat:
@@ -172,7 +179,11 @@ class Plugin(GlancesPlugin):
                         'used': int(fs_stat[fs]['used']) * 1024,
                         'percent': float(fs_stat[fs]['percent']),
                         'key': self.get_key()}
-                    stats.append(fs_current)
+                    # Do not take hidden file system into account
+                    if self.is_hide(fs_current['mnt_point']) or self.is_hide(fs_current['device_name']):
+                        continue
+                    else:
+                        stats.append(fs_current)
 
         # Update the stats
         self.stats = stats
@@ -188,7 +199,7 @@ class Plugin(GlancesPlugin):
         # Alert
         for i in self.stats:
             self.views[i[self.get_key()]]['used']['decoration'] = self.get_alert(
-                i['used'], maximum=i['size'], header=i['mnt_point'])
+                current=i['size'] - i['free'], maximum=i['size'], header=i['mnt_point'])
 
     def msg_curse(self, args=None, max_width=None):
         """Return the dict to display in the curse interface."""

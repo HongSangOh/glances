@@ -2,7 +2,7 @@
 #
 # This file is part of Glances.
 #
-# Copyright (C) 2018 Nicolargo <nicolas@nicolargo.com>
+# Copyright (C) 2019 Nicolargo <nicolas@nicolargo.com>
 #
 # Glances is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -18,8 +18,9 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 """Disk I/O plugin."""
+from __future__ import unicode_literals
 
-from glances.compat import nativestr
+from glances.compat import nativestr, n
 from glances.timer import getTimeSinceLastUpdate
 from glances.plugins.glances_plugin import GlancesPlugin
 
@@ -41,9 +42,10 @@ class Plugin(GlancesPlugin):
     stats is a list
     """
 
-    def __init__(self, args=None):
+    def __init__(self, args=None, config=None):
         """Init the plugin."""
         super(Plugin, self).__init__(args=args,
+                                     config=config,
                                      items_history_list=items_history_list,
                                      stats_init_value=[])
 
@@ -110,7 +112,7 @@ class Plugin(GlancesPlugin):
                                        self.diskio_old[disk].write_bytes)
                         diskstat = {
                             'time_since_update': time_since_update,
-                            'disk_name': disk,
+                            'disk_name': n(disk),
                             'read_count': read_count,
                             'write_count': write_count,
                             'read_bytes': read_bytes,
@@ -160,7 +162,7 @@ class Plugin(GlancesPlugin):
             return ret
 
         # Max size for the interface name
-        name_max_width = max_width - 12
+        name_max_width = max_width - 13
 
         # Header
         msg = '{:{width}}'.format('DISK I/O', width=name_max_width)
@@ -186,9 +188,9 @@ class Plugin(GlancesPlugin):
             ret.append(self.curse_new_line())
             if len(disk_name) > name_max_width:
                 # Cut disk name if it is too long
-                disk_name = '_' + disk_name[-name_max_width:]
+                disk_name = '_' + disk_name[-name_max_width+1:]
             msg = '{:{width}}'.format(nativestr(disk_name),
-                                      width=name_max_width)
+                                      width=name_max_width+1)
             ret.append(self.curse_add_line(msg))
             if args.diskio_iops:
                 # count

@@ -2,7 +2,7 @@
 #
 # This file is part of Glances.
 #
-# Copyright (C) 2018 Nicolargo <nicolas@nicolargo.com>
+# Copyright (C) 2019 Nicolargo <nicolas@nicolargo.com>
 #
 # Glances is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -225,7 +225,7 @@ class GlancesBottle(object):
         """Bottle callback for index.html (/) file."""
 
         if refresh_time is None or refresh_time < 1:
-            refresh_time = self.args.time
+            refresh_time = int(self.args.time)
 
         # Update the stat
         self.__update__()

@@ -2,7 +2,7 @@
 #
 # This file is part of Glances.
 #
-# Copyright (C) 2018 Nicolargo <nicolas@nicolargo.com>
+# Copyright (C) 2019 Nicolargo <nicolas@nicolargo.com>
 #
 # Glances is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -25,6 +25,7 @@ import threading
 import json
 import pickle
 import os
+from ssl import CertificateError
 
 from glances import __version__
 from glances.compat import nativestr, urlopen, HTTPError, URLError
@@ -155,7 +156,7 @@ class Outdated(object):
 
         try:
             res = urlopen(PYPI_API_URL, timeout=3).read()
-        except (HTTPError, URLError) as e:
+        except (HTTPError, URLError, CertificateError) as e:
             logger.debug("Cannot get Glances version from the PyPI RESTful API ({})".format(e))
         else:
             self.data[u'latest_version'] = json.loads(nativestr(res))['info']['version']

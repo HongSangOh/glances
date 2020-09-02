@@ -2,7 +2,7 @@
 #
 # This file is part of Glances.
 #
-# Copyright (C) 2018 Nicolargo <nicolas@nicolargo.com>
+# Copyright (C) 2019 Nicolargo <nicolas@nicolargo.com>
 #
 # Glances is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -32,7 +32,7 @@ The return string is a string with one or more line (\n between lines).
 If the *one_line* var is true then the AMP will be displayed in one line.
 """
 
-from glances.compat import u
+from glances.compat import u, b, n, nativestr
 from glances.timer import Timer
 from glances.logger import logger
 
@@ -99,12 +99,11 @@ class GlancesAmp(object):
             logger.debug("AMP - {}: Can not find section {} in the configuration file".format(self.NAME, self.amp_name))
             return False
 
-        # enable, regex and refresh are mandatories
-        # if not configured then AMP is disabled
         if self.enable():
-            for k in ['regex', 'refresh']:
+            # Refresh option is mandatory
+            for k in ['refresh']:
                 if k not in self.configs:
-                    logger.warning("AMP - {}: Can not find configuration key {} in section {}".format(self.NAME, k, self.amp_name))
+                    logger.warning("AMP - {}: Can not find configuration key {} in section {} (the AMP will be disabled)".format(self.NAME, k, self.amp_name))
                     self.configs['enable'] = 'false'
         else:
             logger.debug("AMP - {} is disabled".format(self.NAME))
@@ -181,9 +180,9 @@ class GlancesAmp(object):
         if one_line is true then replace \n by separator
         """
         if self.one_line():
-            self.configs['result'] = str(result).replace('\n', separator)
+            self.configs['result'] = u(result).replace('\n', separator)
         else:
-            self.configs['result'] = str(result)
+            self.configs['result'] = u(result)
 
     def result(self):
         """ Return the result of the AMP (as a string)"""

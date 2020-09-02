@@ -2,7 +2,7 @@
 #
 # This file is part of Glances.
 #
-# Copyright (C) 2018 Nicolargo <nicolas@nicolargo.com>
+# Copyright (C) 2019 Nicolargo <nicolas@nicolargo.com>
 #
 # Glances is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -23,8 +23,6 @@ from __future__ import division
 
 from math import modf
 
-curses_bars = [' ', ' ', ' ', ' ', '|', '|', '|', '|', '|']
-
 
 class Bar(object):
 
@@ -40,7 +38,12 @@ class Bar(object):
         sys.stdout.flush()
     """
 
-    def __init__(self, size, pre_char='[', post_char=']', empty_char=' ', with_text=True):
+    def __init__(self, size,
+                 percentage_char='|', empty_char=' ',
+                 pre_char='[', post_char=']',
+                 with_text=True):
+        # Build curses_bars
+        self.__curses_bars = [empty_char] * 5 + [percentage_char] * 5
         # Bar size
         self.__size = size
         # Bar current percent
@@ -62,10 +65,6 @@ class Bar(object):
         if self.__with_text:
             return self.__size - 6
 
-    # @size.setter
-    # def size(self, value):
-    #     self.__size = value
-
     @property
     def percent(self):
         return self.__percent
@@ -86,14 +85,18 @@ class Bar(object):
     def post_char(self):
         return self.__post_char
 
-    def __str__(self):
+    def get(self):
         """Return the bars."""
         frac, whole = modf(self.size * self.percent / 100.0)
-        ret = curses_bars[8] * int(whole)
+        ret = self.__curses_bars[8] * int(whole)
         if frac > 0:
-            ret += curses_bars[int(frac * 8)]
+            ret += self.__curses_bars[int(frac * 8)]
             whole += 1
         ret += self.__empty_char * int(self.size - whole)
         if self.__with_text:
             ret = '{}{:5.1f}%'.format(ret, self.percent)
         return ret
+
+    def __str__(self):
+        """Return the bars."""
+        return self.get()

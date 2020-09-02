@@ -32,7 +32,7 @@ with open('README.rst', encoding='utf-8') as f:
 
 def get_data_files():
     data_files = [
-        ('share/doc/glances', ['AUTHORS', 'COPYING', 'NEWS', 'README.rst',
+        ('share/doc/glances', ['AUTHORS', 'COPYING', 'NEWS.rst', 'README.rst',
                                'CONTRIBUTING.md', 'conf/glances.conf']),
         ('share/man/man1', ['docs/man/glances.1'])
     ]
@@ -41,12 +41,40 @@ def get_data_files():
 
 
 def get_install_requires():
-    requires = ['psutil>=5.3.0']
+    requires = ['psutil>=5.3.0', 'future']
     if sys.platform.startswith('win'):
         requires.append('bottle')
         requires.append('requests')
 
     return requires
+
+
+def get_install_extras_require():
+    extras_require = {
+        'action': ['pystache'],
+        # Zeroconf 0.19.1 is the latest one compatible with Python 2 (issue #1293)
+        'browser': ['zeroconf==0.19.1' if PY2 else 'zeroconf>=0.19.1'],
+        'cloud': ['requests'],
+        'cpuinfo': ['py-cpuinfo'],
+        'docker': ['docker>=2.0.0'],
+        'export': ['bernhard', 'cassandra-driver', 'couchdb', 'elasticsearch',
+                   'influxdb>=1.0.0', 'kafka-python', 'pika', 'paho-mqtt', 'potsdb',
+                   'prometheus_client', 'pyzmq', 'statsd'],
+        'folders': ['scandir'],  # python_version<"3.5"
+        'gpu': ['py3nvml'],
+        'graph': ['pygal'],
+        'ip': ['netifaces'],
+        'raid': ['pymdstat'],
+        'smart': ['pySMART.smartx'],
+        'snmp': ['pysnmp'],
+        'sparklines': ['sparklines'],
+        'web': ['bottle', 'requests'],
+        'wifi': ['wifi']
+    }
+    # Add automatically the 'all' target
+    extras_require.update({'all': [i[0] for i in extras_require.values()]})
+
+    return extras_require
 
 
 class tests(Command):
@@ -82,26 +110,7 @@ setup(
     keywords="cli curses monitoring system",
     python_requires=">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*",
     install_requires=get_install_requires(),
-    extras_require={
-        'action': ['pystache'],
-        # Zeroconf 0.19.1 is the latest one compatible with Python 2 (issue #1293)
-        'browser': ['zeroconf==0.19.1' if PY2 else 'zeroconf>=0.19.1'],
-        'cloud': ['requests'],
-        'cpuinfo': ['py-cpuinfo'],
-        'docker': ['docker>=2.0.0'],
-        'export': ['bernhard', 'cassandra-driver', 'couchdb', 'elasticsearch',
-                   'influxdb>=1.0.0', 'kafka-python', 'pika', 'paho-mqtt', 'potsdb',
-                   'prometheus_client', 'pyzmq', 'statsd'],
-        'folders': ['scandir'],  # python_version<"3.5"
-        'gpu': ['nvidia-ml-py3'],  # python_version=="2.7"
-        'graph': ['pygal'],
-        'ip': ['netifaces'],
-        'raid': ['pymdstat'],
-        'smart': ['pySMART.smartx'],
-        'snmp': ['pysnmp'],
-        'web': ['bottle', 'requests'],
-        'wifi': ['wifi']
-    },
+    extras_require=get_install_extras_require(),
     packages=['glances'],
     include_package_data=True,
     data_files=get_data_files(),
@@ -124,6 +133,8 @@ setup(
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
         'Topic :: System :: Monitoring'
     ]
 )

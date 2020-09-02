@@ -22,13 +22,17 @@ Command-Line Options
 
     path to the configuration file
 
-.. option:: -modules-list
+.. option:: --modules-list
 
     display modules (plugins & exports) list and exit
 
 .. option:: --disable-plugin PLUGIN
 
     disable PLUGIN (comma separed list)
+
+.. option:: --enable-plugin PLUGIN
+
+    enable PLUGIN (comma separed list)
 
 .. option:: --stdout PLUGINS_STATS
 
@@ -286,6 +290,9 @@ The following commands (key pressed) are supported while in Glances:
 
 ``I``
     Show/hide IP module
+
+``k``
+    Show/hide TCP connections
 
 ``l``
     Show/hide log messages

@@ -5,10 +5,10 @@
 #
 
 # Pull base image.
-FROM ubuntu
+FROM ubuntu:20.04
 
 # Install Glances (develop branch)
-RUN apt-get update && apt-get -y install curl && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get -y install curl iputils-ping && rm -rf /var/lib/apt/lists/*
 RUN curl -L https://raw.githubusercontent.com/nicolargo/glancesautoinstall/master/install-develop.sh | /bin/bash && rm -rf /var/lib/apt/lists/*
 
 

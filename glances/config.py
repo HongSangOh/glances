@@ -2,7 +2,7 @@
 #
 # This file is part of Glances.
 #
-# Copyright (C) 2018 Nicolargo <nicolas@nicolargo.com>
+# Copyright (C) 2019 Nicolargo <nicolas@nicolargo.com>
 #
 # Glances is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -105,7 +105,7 @@ class Config(object):
         self._loaded_config_file = None
 
         # Re patern for optimize research of `foo`
-        self.re_pattern = re.compile('(\`.+?\`)')
+        self.re_pattern = re.compile(r'(\`.+?\`)')
 
         self.parser = ConfigParser()
         self.read()

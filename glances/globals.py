@@ -2,7 +2,7 @@
 #
 # This file is part of Glances.
 #
-# Copyright (C) 2018 Nicolargo <nicolas@nicolargo.com>
+# Copyright (C) 2019 Nicolargo <nicolas@nicolargo.com>
 #
 # Glances is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -22,6 +22,7 @@
 import errno
 import os
 import sys
+import platform
 
 # OS constants (some libraries/features are OS-dependent)
 BSD = sys.platform.find('bsd') != -1
@@ -29,6 +30,7 @@ LINUX = sys.platform.startswith('linux')
 MACOS = sys.platform.startswith('darwin')
 SUNOS = sys.platform.startswith('sunos')
 WINDOWS = sys.platform.startswith('win')
+WSL = "linux" in platform.system().lower() and "microsoft" in platform.uname()[3].lower()
 
 # Set the AMPs, plugins and export modules path
 work_path = os.path.realpath(os.path.dirname(__file__))

@@ -40,13 +40,13 @@
             <div class="col-sm-12 col-md-8 col-lg-6" ng-if="!vm.arguments.disable_cpu && vm.arguments.percpu">
                 <glances-plugin-percpu></glances-plugin-percpu>
             </div>
-            <div class="hidden-xs hidden-sm col-md-4 col-lg-3" ng-if="!vm.arguments.disable_gpu && vm.hasGpu">
+            <div class="col-sm-6 col-md-4 col-lg-3" ng-if="!vm.arguments.disable_gpu && vm.hasGpu">
                 <glances-plugin-gpu></glances-plugin-gpu>
             </div>
-            <div class="col-sm-6 col-md-4 col-lg-3" ng-if="!vm.argumentsdisable_mem">
+            <div class="col-sm-6 col-md-4 col-lg-3" ng-if="!vm.arguments.disable_mem">
                 <glances-plugin-mem></glances-plugin-mem>
             </div>
-            <div class="hidden-xs hidden-sm col-md-4 col-lg-3"
+            <div class="col-sm-6 col-md-4 col-lg-3"
                  ng-if="!vm.arguments.disable_mem && !(!vm.arguments.disable_gpu && vm.hasGpu)">
                 <glances-plugin-mem-more></glances-plugin-mem-more>
             </div>
@@ -61,6 +61,7 @@
             <div class="col-sm-6 sidebar" ng-if="!vm.arguments.disable_left_sidebar">
                 <div class="table">
                     <glances-plugin-network id="plugin-network" class="plugin table-row-group" ng-if="!vm.arguments.disable_network"></glances-plugin-network>
+                    <glances-plugin-connections id="plugin-connections" class="plugin table-row-group" ng-if="vm.isLinux && !vm.arguments.disable_connections"></glances-plugin-connections>
                     <glances-plugin-wifi id="plugin-wifi" class="plugin table-row-group" ng-if="!vm.arguments.disable_wifi"></glances-plugin-wifi>
                     <glances-plugin-ports id="plugin-ports" class="plugin table-row-group" ng-if="!vm.arguments.disable_ports"></glances-plugin-ports>
                     <glances-plugin-diskio id="plugin-diskio" class="plugin table-row-group" ng-if="!vm.arguments.disable_diskio"></glances-plugin-diskio>
@@ -78,5 +79,4 @@
             </div>
         </div>
     </div>
-</div>
 </div>

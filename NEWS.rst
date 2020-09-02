@@ -2,6 +2,144 @@
 Glances Version 3
 ==============================================================================
 
+Version 3.1.5
+=============
+
+Enhancements and new features:
+
+    * Enhancement: RSS for containers enhancement #1694
+    * exports: support rabbitmq amqps enhancement #1687
+    * Quick Look missing CPU Infos enhancement #1685
+    * Add amqps protocol suppport for rabbitmq export #1688
+    * Select host in Grafana json #1684
+    * Value for free disk space is counterintuative on ext file systems enhancement #644
+
+Bugs corrected:
+
+    * Can't start server: unexpected keyword argument 'address' bug enhancement #1693
+    * class AmpsList method _build_amps_list() Windows fail (glances/amps_list.py) bug #1689 
+    * Fix grammar in sensors documentation #1681
+    * Reflect "used percent" user disk space for [fs] alert #1680
+    * Bug: [fs] plugin needs to reflect user disk space usage needs test #1658
+    * Fixed formatting on FS example #1673
+    * Missing temperature documentation #1664
+    * Wiki page for starting as a service documentation #1661
+    * How to start glances with --username option on syetemd? documentation #1657
+    * tests using /etc/glances/glances.conf from already installed version bug #1654
+    * Unittests: Use sys.executable instead of hardcoding the python interpreter #1655
+    * Glances should not phone home install #1646
+    * Add lighttpd reverse proxy config to the wiki documentation #1643
+    * Undefined name 'i' in plugins/glances_gpu.py bug #1635
+
+Version 3.1.4
+=============
+
+Enhancements and new features:
+
+    * FS filtering can be done on device name documentation enhancement #1606
+    * Feature request: Include hostname in all (e.g. kafka) exports #1594
+    * Threading.isAlive was removed in Python 3.9. Use is_alive. #1585
+    * log file under public/shared tmp/ folders must not have deterministic name #1575
+    * Install / Systemd Debian documentation #1560
+    * Display load as percentage when Irix mode is disable #1554
+    * [WebUI] Add a new TCP connections status plugin new feature #1547
+    * Make processes.sort_key configurable enhancement #1536
+    * NVIDIA GPU temperature #1523
+    * Feature request: HDD S.M.A.R.T. #1288
+
+Bugs corrected:
+
+    * Glances 3.1.3: when no network interface with Public address #1615
+    * NameError: name 'logger' is not defined #1602
+    * Disk IO stats missing after upgrade to 5.5.x kernel #1601
+    * Glances don't want to run on Crostini (LXC Container, Debian 10, python 3.7.3) #1600
+    * Kafka key name needs to be bytes #1593
+    * Cant start glances with glances --export mqtt #1581
+    * [WEBUI] AMP plugins is not displayed correctly in the Web Interface #1574
+    * Unhandled AttributeError when no config files found #1569
+    * Glances writing lots of Docker Error message in logs file enhancement #1561
+    * GPU stats not showing on mobile web view bug needs test #1555
+    * KeyError: b'Rss:' in memory_maps #1551
+    * CPU usage is always 100% #1550
+    * IP plugin still exporting data when disabled #1544
+    * Quicklook plugin not working on Systemd #1537
+
+Version 3.1.3
+=============
+
+Enhancements and new features:
+
+  * Add a new TCP connections status plugin enhancement #1526
+  * Add --enable-plugin option from the command line
+
+Bugs corrected:
+
+  * Fix custom refresh time in the web UI #1548 by notFloran
+  * Fix issue in WebUI with empty docker stats #1546 by notFloran
+  * Glances fails without network interface bug #1535
+  * Disable option in the configuration file is now take into account
+
+Others:
+
+  * Sensors plugin is disable by default (high CPU consumption on some Liux distribution).
+
+Version 3.1.2
+=============
+
+Enhancements and new features:
+
+  * Make CSV export append instead of replace #1525
+  * HDDTEMP config IP and Port #1508
+  * [Feature Request] Option in config to change character used to display percentage in Quicklook #1508
+
+Bugs corrected:
+  * Cannot restart glances with --export influxdb after update to 3.1.1 bug #1530
+  * ip plugin empty interface bug #1509
+  * Glances Snap doesn't run on Orange Pi Zero running Ubuntu Core 16 bug #1517
+  * Error with IP Plugin : object has no attribute bug #1528
+  * repair the problem that when running 'glances --stdout-csv amps' #1520
+  * Possible typo in glances_influxdb.py #1514
+
+Others:
+
+      * In debug mode (-d) all duration (init, update are now logged). Grep duration in log file.
+
+Version 3.1.1
+=============
+
+Enhancements and new features:
+
+    * Please add some sparklines! #1446
+    * Add Load Average (similar to Linux) on Windows #344
+    * Add authprovider for cassandra export (thanks to @EmilienMottet) #1395
+    * Curses's browser server list sorting added (thanks to @limfreee) #1396
+    * ElasticSearch: add date to index, unbreak object push (thanks to @genevera) #1438
+    * Performance issue with large folder #1491
+    * Can't connect to influxdb with https enabled #1497
+
+Bugs corrected:
+
+    * Fix Cassandra table name export #1402
+    * 500 Internal Server Error /api/3/network/interface_name #1401
+    * Connection to MQTT server failed : getaddrinfo() argument 2 must be integer or string #1450
+    * `l` keypress (hide alert log) not working after some time #1449
+    * Too less data using prometheus exporter #1462
+    * Getting an error when running with prometheus exporter #1469
+    * Stack trace when starts Glances on CentOS #1470
+    * UnicodeEncodeError: 'ascii' codec can't encode character u'\u25cf' - Raspbian stretch #1483
+    * Prometheus integration broken with latest prometheus_client #1397
+    * "sorted by ?" is displayed when setting the sort criterion to "USER" #1407
+    * IP plugin displays incorrect subnet mask #1417
+    * Glances PsUtil ValueError on IoCounter with TASK kernel options #1440
+    * Per CPU in Web UI have some display issues. #1494
+    * Fan speed and voltages section? #1398
+
+Others:
+
+    * Documentation is unclear how to get Docker information #1386
+    * Add 'all' target to the Pip install (install all dependencies)
+    * Allow comma separated commands in AMP
+
 Version 3.1
 ===========
 
@@ -13,6 +151,7 @@ Enhancements and new features:
     * Prohibit some plug-in data from being exported to influxdb #1368
     * Disable plugin from Glances configuration file #1378
     * Curses-browser's server list paging added (thanks to @limfreee) #1385
+    * Client Browser's thread management added (thanks to @limfreee) #1391
 
 Bugs corrected:
 
@@ -30,11 +169,13 @@ Bugs corrected:
     * Create an option to set the username to use in Web or RPC Server mode #1381
     * Missing kernel task names when the webui is switched to long process names #1371
     * Drive name with special characters causes crash #1383
+    * Cannot get stats in Cloud plugin (404) #1384
 
 Others:
 
     * Add Docker documentation (thanks to @rgarrigue)
     * Refactor Glances logs (now called Glances events)
+    * "chart" extra dep replace by "graph" #1389
 
 Version 3.0.2
 =============

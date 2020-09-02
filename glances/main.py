@@ -2,7 +2,7 @@
 #
 # This file is part of Glances.
 #
-# Copyright (C) 2018 Nicolargo <nicolas@nicolargo.com>
+# Copyright (C) 2019 Nicolargo <nicolas@nicolargo.com>
 #
 # Glances is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -27,7 +27,7 @@ from glances import __version__, psutil_version
 from glances.compat import input
 from glances.config import Config
 from glances.globals import WINDOWS
-from glances.logger import logger
+from glances.logger import logger, LOG_FILENAME
 
 
 def disable(class_name, var):
@@ -98,8 +98,11 @@ Examples of use:
   Display CSV stats to stdout (all stats in one line):
     $ glances --stdout-csv now,cpu.user,mem.used,load
 
-  Disable some plugins (any modes):
+  Disable some plugins (comma separated list):
     $ glances --disable-plugin network,ports
+
+  Enable some plugins (comma separated list):
+    $ glances --enable-plugin sensors
 """
 
     def __init__(self):
@@ -109,7 +112,7 @@ Examples of use:
 
     def init_args(self):
         """Init all the command line arguments."""
-        version = "Glances v" + __version__ + " with psutil v" + psutil_version
+        version = 'Glances v{} with PsUtil v{}\nLog file: {}'.format(__version__, psutil_version, LOG_FILENAME)
         parser = argparse.ArgumentParser(
             prog='glances',
             conflict_handler='resolve',
@@ -126,8 +129,10 @@ Examples of use:
                             action='store_true', default=False,
                             dest='modules_list',
                             help='display modules (plugins & exports) list and exit')
-        parser.add_argument('--disable-plugin', dest='disable_plugin',
+        parser.add_argument('--disable-plugin', '--disable-plugins', dest='disable_plugin',
                             help='disable plugin (comma separed list)')
+        parser.add_argument('--enable-plugin', '--enable-plugins', dest='enable_plugin',
+                            help='enable plugin (comma separed list)')
         parser.add_argument('--disable-process', action='store_true', default=False,
                             dest='disable_process', help='disable process module')
         # Enable or disable option
@@ -169,6 +174,8 @@ Examples of use:
                             default='./glances.csv',
                             dest='export_csv_file',
                             help='file path for CSV exporter')
+        parser.add_argument('--export-csv-overwrite', action='store_true', default=False,
+                            dest='export_csv_overwrite', help='overwrite existing CSV file')
         parser.add_argument('--export-json-file',
                             default='./glances.json',
                             dest='export_json_file',
@@ -240,6 +247,8 @@ Examples of use:
                             dest='fahrenheit', help='display temperature in Fahrenheit (default is Celsius)')
         parser.add_argument('--fs-free-space', action='store_true', default=False,
                             dest='fs_free_space', help='display FS free space instead of used')
+        parser.add_argument('--sparkline', action='store_true', default=False,
+                            dest='sparkline', help='display sparklines instead of bar in the curses interface')
         parser.add_argument('--theme-white', action='store_true', default=False,
                             dest='theme_white', help='optimize display colors for white background')
         # Globals options
@@ -263,16 +272,19 @@ Examples of use:
             simplefilter("ignore")
 
         # Plugins disable/enable
+        # Allow users to disable plugins from the glances.conf (issue #1378)
+        for s in self.config.sections():
+            if self.config.has_section(s) \
+               and (self.config.get_bool_value(s, 'disable', False)):
+                disable(args, s)
+                logger.debug('{} disabled by the configuration file'.format(s))
+        # The configuration key can be overwrite from the command line
         if args.disable_plugin is not None:
             for p in args.disable_plugin.split(','):
                 disable(args, p)
-        else:
-            # Allow users to disable plugins from the glances.conf (issue #1378)
-            for s in self.config.sections():
-                if self.config.has_section(s) \
-                   and (self.config.get_bool_value(s, 'disable', False)):
-                    disable(args, s)
-                    logger.debug('{} disabled by the configuration file'.format(s))
+        if args.enable_plugin is not None:
+            for p in args.enable_plugin.split(','):
+                enable(args, p)
 
         # Exporters activation
         if args.export is not None:
@@ -293,9 +305,8 @@ Examples of use:
         if args.disable_autodiscover:
             logger.info("Auto discover mode is disabled")
 
-        # In web server mode, default refresh time: 5 sec
+        # In web server mode
         if args.webserver:
-            args.time = 5
             args.process_short_name = True
 
         # Server or client login/password

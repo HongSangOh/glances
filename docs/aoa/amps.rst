@@ -6,7 +6,7 @@ Applications Monitoring Process
 Thanks to Glances and its AMP module, you can add specific monitoring to
 running processes. AMPs are defined in the Glances [configuration file](http://glances.readthedocs.io/en/stable/config.html).
 
-You can disable AMP using the ``--disable-amps`` option or pressing the
+You can disable AMP using the ``--disable-plugin amps`` option or pressing the
 ``A`` key.
 
 Simple AMP
@@ -48,6 +48,20 @@ higher than 2, then the AMP is displayed with a purple color (red if
 less than countmin):
 
 .. image:: ../_static/amp-python-warning.png
+
+If the regex option is not defined, the AMP will be executed every refresh
+time and the process count will not be displayed (countmin and countmax will 
+be ignored).
+
+For example:
+
+.. code-block:: ini
+
+    [amp_conntrack]
+    enable=false
+    refresh=30
+    one_line=false
+    command=sysctl net.netfilter.nf_conntrack_count;sysctl net.netfilter.nf_conntrack_max
 
 User defined AMP
 ----------------

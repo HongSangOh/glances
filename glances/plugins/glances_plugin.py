@@ -2,7 +2,7 @@
 #
 # This file is part of Glances.
 #
-# Copyright (C) 2018 Nicolargo <nicolas@nicolargo.com>
+# Copyright (C) 2019 Nicolargo <nicolas@nicolargo.com>
 #
 # Glances is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -34,6 +34,7 @@ from glances.history import GlancesHistory
 from glances.logger import logger
 from glances.events import glances_events
 from glances.thresholds import glances_thresholds
+from glances.timer import Counter
 
 
 class GlancesPlugin(object):
@@ -41,6 +42,7 @@ class GlancesPlugin(object):
 
     def __init__(self,
                  args=None,
+                 config=None,
                  items_history_list=None,
                  stats_init_value={}):
         """Init the plugin of plugins class.
@@ -66,7 +68,8 @@ class GlancesPlugin(object):
         :stats_init_value: Default value for a stats item
         """
         # Plugin name (= module name without glances_)
-        self.plugin_name = self.__class__.__module__[len('glances_'):]
+        pos = self.__class__.__module__.find('glances_') + len('glances') + 1
+        self.plugin_name = self.__class__.__module__[pos:]
         # logger.debug("Init plugin %s" % self.plugin_name)
 
         # Init the args
@@ -83,8 +86,12 @@ class GlancesPlugin(object):
         self.items_history_list = items_history_list
         self.stats_history = self.init_stats_history()
 
-        # Init the limits dictionnary
+        # Init the limits (configuration keys) dictionnary
         self._limits = dict()
+        if config is not None:
+            logger.debug('Load section {} in {}'.format(self.plugin_name,
+                                                        config.config_file_paths()))
+            self.load_limits(config=config)
 
         # Init the actions
         self.actions = GlancesActions(args=args)
@@ -149,19 +156,19 @@ class GlancesPlugin(object):
         except UnicodeDecodeError:
             return json.dumps(d, ensure_ascii=False)
 
-    def _history_enable(self):
+    def history_enable(self):
         return self.args is not None and not self.args.disable_history and self.get_items_history_list() is not None
 
     def init_stats_history(self):
         """Init the stats history (dict of GlancesAttribute)."""
-        if self._history_enable():
+        if self.history_enable():
             init_list = [a['name'] for a in self.get_items_history_list()]
             logger.debug("Stats history activated for plugin {} (items: {})".format(self.plugin_name, init_list))
         return GlancesHistory()
 
     def reset_stats_history(self):
         """Reset the stats history (dict of GlancesAttribute)."""
-        if self._history_enable():
+        if self.history_enable():
             reset_list = [a['name'] for a in self.get_items_history_list()]
             logger.debug("Reset history for plugin {} (items: {})".format(self.plugin_name, reset_list))
             self.stats_history.reset()
@@ -174,7 +181,7 @@ class GlancesPlugin(object):
         else:
             item_name = self.get_key()
         # Build the history
-        if self.get_export() and self._history_enable():
+        if self.get_export() and self.history_enable():
             for i in self.get_items_history_list():
                 if isinstance(self.get_export(), list):
                     # Stats is a list of data
@@ -390,7 +397,8 @@ class GlancesPlugin(object):
             try:
                 # Source:
                 # http://stackoverflow.com/questions/4573875/python-get-index-of-dictionary-item-in-list
-                return self._json_dumps({item: map(itemgetter(item), self.stats)})
+                # But https://github.com/nicolargo/glances/issues/1401
+                return self._json_dumps({item: list(map(itemgetter(item), self.stats))})
             except (KeyError, ValueError) as e:
                 logger.error("Cannot get item {} ({})".format(item, e))
                 return None
@@ -494,6 +502,7 @@ class GlancesPlugin(object):
             return False
 
         # Read the global section
+        # @TODO: not optimized because this section is loaded for each plugin...
         if config.has_section('global'):
             self._limits['history_size'] = config.get_float_value('global', 'history_size', default=28800)
             logger.debug("Load configuration key: {} = {}".format('history_size', self._limits['history_size']))
@@ -725,7 +734,7 @@ class GlancesPlugin(object):
         # Return the action list
         return log_tag[0].lower() == 'true'
 
-    def get_conf_value(self, value, header="", plugin_name=None):
+    def get_conf_value(self, value, header="", plugin_name=None, default=[]):
         """Return the configuration (header_) value for the current plugin.
 
         ...or the one given by the plugin_name var.
@@ -741,7 +750,7 @@ class GlancesPlugin(object):
         try:
             return self._limits[plugin_name + '_' + value]
         except KeyError:
-            return []
+            return default
 
     def is_hide(self, value, header=""):
         """Return True if the value is in the hide configuration list.
@@ -752,7 +761,9 @@ class GlancesPlugin(object):
         hide=sda2,sda5,loop.*
         """
         # TODO: possible optimisation: create a re.compile list
-        return not all(j is None for j in [re.match(i, value.lower()) for i in self.get_conf_value('hide', header=header)])
+        # Old version (see issue #1691)
+        #return not all(j is None for j in [re.match(i, value.lower()) for i in self.get_conf_value('hide', header=header)])
+        return any(j for j in [re.match(i, value) for i in self.get_conf_value('hide', header=header)])
 
     def has_alias(self, header):
         """Return the alias name for the relative header or None if nonexist."""
@@ -920,11 +931,14 @@ class GlancesPlugin(object):
     def _log_result_decorator(fct):
         """Log (DEBUG) the result of the function fct."""
         def wrapper(*args, **kw):
+            counter = Counter()
             ret = fct(*args, **kw)
-            logger.debug("%s %s %s return %s" % (
+            duration = counter.get()
+            logger.debug("%s %s %s return %s in %s seconds" % (
                 args[0].__class__.__name__,
                 args[0].__class__.__module__[len('glances_'):],
-                fct.__name__, ret))
+                fct.__name__, ret,
+                duration))
             return ret
         return wrapper
 

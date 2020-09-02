@@ -7,7 +7,7 @@ Sensors
 
 .. image:: ../_static/sensors.png
 
-Glances can displays the sensors information using ``psutil`` and/or
+Glances can display the sensors information using ``psutil`` and/or
 ``hddtemp``.
 
 There is no alert on this information.
@@ -15,3 +15,6 @@ There is no alert on this information.
 .. note::
     Limit values and sensors alias names can be defined in the
     configuration file under the ``[sensors]`` section.
+
+.. note::
+    This plugin is disabled by default in the configuration file.

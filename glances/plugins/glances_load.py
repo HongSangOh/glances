@@ -2,7 +2,7 @@
 #
 # This file is part of Glances.
 #
-# Copyright (C) 2018 Nicolargo <nicolas@nicolargo.com>
+# Copyright (C) 2019 Nicolargo <nicolas@nicolargo.com>
 #
 # Glances is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -20,10 +20,12 @@
 """Load plugin."""
 
 import os
+import psutil
 
 from glances.compat import iteritems
 from glances.plugins.glances_core import Plugin as CorePlugin
 from glances.plugins.glances_plugin import GlancesPlugin
+from glances.logger import logger
 
 # SNMP OID
 # 1 minute Load: .1.3.6.1.4.1.2021.10.1.3.1
@@ -49,9 +51,10 @@ class Plugin(GlancesPlugin):
     stats is a dict
     """
 
-    def __init__(self, args=None):
+    def __init__(self, args=None, config=None):
         """Init the plugin."""
         super(Plugin, self).__init__(args=args,
+                                     config=config,
                                      items_history_list=items_history_list)
 
         # We want to display the stat in the curse interface
@@ -60,8 +63,20 @@ class Plugin(GlancesPlugin):
         # Call CorePlugin in order to display the core number
         try:
             self.nb_log_core = CorePlugin(args=self.args).update()["log"]
-        except Exception:
+        except Exception as e:
+            logger.debug('Error: Can not retrieve the CPU core number (set it to 1) ({})'.format(e))
             self.nb_log_core = 1
+
+    def _getloadavg(self):
+        """Get load average. On both Linux and Windows thanks to PsUtil"""
+        try:
+            return psutil.getloadavg()
+        except AttributeError:
+            pass
+        try:
+            return os.getloadavg()
+        except (AttributeError, OSError):
+            return None
 
     @GlancesPlugin._check_decorator
     @GlancesPlugin._log_result_decorator
@@ -74,15 +89,15 @@ class Plugin(GlancesPlugin):
             # Update stats using the standard system lib
 
             # Get the load using the os standard lib
-            try:
-                load = os.getloadavg()
-            except (OSError, AttributeError):
+            load = self._getloadavg()
+            if load is None:
                 stats = self.get_init_value()
             else:
                 stats = {'min1': load[0],
                          'min5': load[1],
                          'min15': load[2],
                          'cpucore': self.nb_log_core}
+
         elif self.input_method == 'snmp':
             # Update stats using SNMP
             stats = self.get_stats_snmp(snmp_oid=snmp_oid)
@@ -129,34 +144,29 @@ class Plugin(GlancesPlugin):
 
         # Build the string message
         # Header
-        msg = '{:8}'.format('LOAD')
+        msg = '{:6}'.format('LOAD%' if (args.disable_irix and self.nb_log_core != 0) else 'LOAD')
         ret.append(self.curse_add_line(msg, "TITLE"))
         # Core number
         if 'cpucore' in self.stats and self.stats['cpucore'] > 0:
-            msg = '{}-core'.format(int(self.stats['cpucore']))
+            msg = '{:3}-core'.format(int(self.stats['cpucore']))
             ret.append(self.curse_add_line(msg))
-        # New line
-        ret.append(self.curse_new_line())
-        # 1min load
-        msg = '{:8}'.format('1 min:')
-        ret.append(self.curse_add_line(msg))
-        msg = '{:>6.2f}'.format(self.stats['min1'])
-        ret.append(self.curse_add_line(msg))
-        # New line
-        ret.append(self.curse_new_line())
-        # 5min load
-        msg = '{:8}'.format('5 min:')
-        ret.append(self.curse_add_line(msg))
-        msg = '{:>6.2f}'.format(self.stats['min5'])
-        ret.append(self.curse_add_line(
-            msg, self.get_views(key='min5', option='decoration')))
-        # New line
-        ret.append(self.curse_new_line())
-        # 15min load
-        msg = '{:8}'.format('15 min:')
-        ret.append(self.curse_add_line(msg))
-        msg = '{:>6.2f}'.format(self.stats['min15'])
-        ret.append(self.curse_add_line(
-            msg, self.get_views(key='min15', option='decoration')))
+        # Loop over 1min, 5min and 15min load
+        for load_time in ['1', '5', '15']:
+            ret.append(self.curse_new_line())
+            msg = '{:8}'.format('{} min:'.format(load_time))
+            ret.append(self.curse_add_line(msg))
+            if args.disable_irix and self.nb_log_core != 0:
+                # Enable Irix mode for load (see issue #1554)
+                load_stat = self.stats['min{}'.format(load_time)] / self.nb_log_core * 100
+            else:
+                load_stat = self.stats['min{}'.format(load_time)]
+            msg = '{:>6.2f}'.format(load_stat)
+            if load_time == '1':
+                ret.append(self.curse_add_line(msg))
+            else:
+                # Alert is only for 5 and 15 min
+                ret.append(self.curse_add_line(
+                    msg, self.get_views(key='min{}'.format(load_time),
+                                        option='decoration')))
 
         return ret

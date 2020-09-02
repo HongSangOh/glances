@@ -3,7 +3,7 @@
 #
 # Glances - An eye on your system
 #
-# Copyright (C) 2018 Nicolargo <nicolas@nicolargo.com>
+# Copyright (C) 2019 Nicolargo <nicolas@nicolargo.com>
 #
 # Glances is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -81,7 +81,7 @@ class TestGlances(unittest.TestCase):
 
     def test_001_plugins(self):
         """Check mandatory plugins."""
-        plugins_to_check = ['system', 'cpu', 'load', 'mem', 'memswap', 'network', 'diskio', 'fs', 'irq']
+        plugins_to_check = ['system', 'cpu', 'load', 'mem', 'memswap', 'network', 'diskio', 'fs']
         print('INFO: [TEST_001] Check the mandatory plugins list: %s' % ', '.join(plugins_to_check))
         plugins_list = stats.getPluginsList()
         for plugin in plugins_to_check:
@@ -257,7 +257,7 @@ class TestGlances(unittest.TestCase):
     def test_016_hddsmart(self):
         """Check hard disk SMART data plugin."""
         try:
-            from glances.plugins.glances_smart import is_admin
+            from glances.compat import is_admin
         except ImportError:
             print("INFO: [TEST_016] pySMART not found, not running SMART plugin test")
             return
@@ -268,7 +268,11 @@ class TestGlances(unittest.TestCase):
         if not is_admin():
             print("INFO: Not admin, SMART list should be empty")
             assert len(stats_grab) == 0
+        elif stats_grab == {}:
+            print("INFO: Admin but SMART list is empty")
+            assert len(stats_grab) == 0
         else:
+            print(stats_grab)
             self.assertTrue(stat in stats_grab[0].keys(), msg='Cannot find key: %s' % stat)
 
         print('INFO: SMART stats: %s' % stats_grab)

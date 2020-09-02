@@ -77,28 +77,6 @@ available network interfaces) and TCP port is ``61209``.
 
 In client/server mode, limits are set by the server side.
 
-You can set a password to access to the server using the ``--password``.
-By default, the username is ``glances`` but you can change it with
-``--username``.
-
-If you want, the SHA password will be stored in ``username.pwd`` file.
-Next time your run the server/client, password will not be asked. To set a
-specific username you can used the -u <username> option.
-
-It is also possible to set the password in the
-Glances configuration file:
-
-.. code-block:: ini
-
-    [passwords]
-    # Define the passwords list
-    # Syntax: host=password
-    # Where: host is the hostname
-    #        password is the clear password
-    # Additionally (and optionally) a default password could be defined
-    localhost=mylocalhostpassword
-    default=mydefaultpassword
-
 Central client
 ^^^^^^^^^^^^^^
 
@@ -132,6 +110,12 @@ To start the central client, use the following option:
 .. note::
 
     Use ``--disable-autodiscover`` to disable the auto discovery mode.
+
+When the list is displayed, you can navigate through the Glances servers with
+up/down keys. It is also possible to sort the server using:
+- '1' is normal (do not sort)
+- '2' is using sorting with ascending order (ONLINE > SNMP > PROTECTED > OFFLINE > UNKNOWN)
+- '3' is using sorting with descending order (UNKNOW > OFFLINE > PROTECTED > SNMP > ONLINE)
 
 SNMP
 ^^^^
@@ -187,3 +171,31 @@ The Glances web interface follows responsive web design principles.
 Here's a screenshot from Chrome on Android:
 
 .. image:: _static/screenshot-web2.png
+
+How to protect your server (or Web server) with a login/password ?
+------------------------------------------------------------------
+
+You can set a password to access to the server using the ``--password``.
+By default, the login is ``glances`` but you can change it with
+``--username``.
+
+If you want, the SHA password will be stored in ``<login>.pwd`` file (in 
+the same folder where the Glances configuration file is stored, so 
+~/.config/glances/ on GNU Linus operating system).
+
+Next time your run the server/client, password will not be asked. To set a
+specific username you can used the -u <username> option.
+
+It is also possible to set the default password in the Glances configuration 
+file:
+
+.. code-block:: ini
+
+    [passwords]
+    # Define the passwords list
+    # Syntax: host=password
+    # Where: host is the hostname
+    #        password is the clear password
+    # Additionally (and optionally) a default password could be defined
+    localhost=mylocalhostpassword
+    default=mydefaultpassword

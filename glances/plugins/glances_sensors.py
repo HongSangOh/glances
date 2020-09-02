@@ -2,7 +2,7 @@
 #
 # This file is part of Glances.
 #
-# Copyright (C) 2018 Nicolargo <nicolas@nicolargo.com>
+# Copyright (C) 2019 Nicolargo <nicolas@nicolargo.com>
 #
 # Glances is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -23,18 +23,14 @@ import psutil
 import warnings
 
 from glances.logger import logger
-from glances.compat import iteritems
-from glances.plugins.glances_batpercent import Plugin as BatPercentPlugin
-from glances.plugins.glances_hddtemp import Plugin as HddTempPlugin
+from glances.compat import iteritems, to_fahrenheit
+from glances.timer import Counter
+from glances.plugins.sensors.glances_batpercent import Plugin as BatPercentPlugin
+from glances.plugins.sensors.glances_hddtemp import Plugin as HddTempPlugin
 from glances.plugins.glances_plugin import GlancesPlugin
 
 SENSOR_TEMP_UNIT = 'C'
-SENSOR_FAN_UNIT = 'rpm'
-
-
-def to_fahrenheit(celsius):
-    """Convert Celsius to Fahrenheit."""
-    return celsius * 1.8 + 32
+SENSOR_FAN_UNIT = 'R'
 
 
 class Plugin(GlancesPlugin):
@@ -45,21 +41,30 @@ class Plugin(GlancesPlugin):
     The hard disks are already sorted by name.
     """
 
-    def __init__(self, args=None):
+    def __init__(self, args=None, config=None):
         """Init the plugin."""
         super(Plugin, self).__init__(args=args,
+                                     config=config,
                                      stats_init_value=[])
 
+        start_duration = Counter()
+
         # Init the sensor class
+        start_duration.reset()
         self.glancesgrabsensors = GlancesGrabSensors()
+        logger.debug("Generic sensor plugin init duration: {} seconds".format(start_duration.get()))
 
         # Instance for the HDDTemp Plugin in order to display the hard disks
         # temperatures
-        self.hddtemp_plugin = HddTempPlugin(args=args)
+        start_duration.reset()
+        self.hddtemp_plugin = HddTempPlugin(args=args, config=config)
+        logger.debug("HDDTemp sensor plugin init duration: {} seconds".format(start_duration.get()))
 
         # Instance for the BatPercent in order to display the batteries
         # capacities
-        self.batpercent_plugin = BatPercentPlugin(args=args)
+        start_duration.reset()
+        self.batpercent_plugin = BatPercentPlugin(args=args, config=config)
+        logger.debug("Battery sensor plugin init duration: {} seconds".format(start_duration.get()))
 
         # We want to display the stat in the curse interface
         self.display_curse = True
@@ -122,6 +127,12 @@ class Plugin(GlancesPlugin):
 
             pass
 
+        # Set the alias for each stat
+        for stat in stats:
+            alias = self.has_alias(stat["label"].lower())
+            if alias:
+                stat["label"] = alias
+
         # Update the stats
         self.stats = stats
 
@@ -182,11 +193,7 @@ class Plugin(GlancesPlugin):
                 continue
             # New line
             ret.append(self.curse_new_line())
-            # Alias for the lable name ?
-            label = self.has_alias(i['label'].lower())
-            if label is None:
-                label = i['label']
-            msg = '{:{width}}'.format(label[:name_max_width],
+            msg = '{:{width}}'.format(i["label"][:name_max_width],
                                       width=name_max_width)
             ret.append(self.curse_add_line(msg))
             if i['value'] in (b'ERR', b'SLP', b'UNK', b'NOS'):
@@ -247,8 +254,9 @@ class GlancesGrabSensors(object):
 
         # !!! Disable Fan: High CPU consumption with psutil 5.2.0 or higher
         # Delete the two followings lines when corrected (https://github.com/giampaolo/psutil/issues/1199)
-        self.init_fan = False
-        logger.debug("Fan speed sensors disable (see https://github.com/giampaolo/psutil/issues/1199)")
+        # Correct and tested with PsUtil 5.6.1 (Ubuntu 18.04)
+        # self.init_fan = False
+        # logger.debug("Fan speed sensors disable (see https://github.com/giampaolo/psutil/issues/1199)")
 
         # Init the stats
         self.reset()

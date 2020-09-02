@@ -24,15 +24,18 @@ Legend:
    quicklook
    cpu
    gpu
-   load
    memory
+   load
    network
+   connections
    wifi
    ports
-   disk
+   diskio
    fs
-   folders
    irq
+   folders
+   raid
+   smart
    sensors
    ps
    monitor

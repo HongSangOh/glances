@@ -2,7 +2,7 @@
 #
 # This file is part of Glances.
 #
-# Copyright (C) 2018 Nicolargo <nicolas@nicolargo.com>
+# Copyright (C) 2019 Nicolargo <nicolas@nicolargo.com>
 #
 # Glances is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -41,6 +41,7 @@ class Export(GlancesExport):
         self.db = None
 
         # Optionals configuration keys
+        self.protocol = 'http'
         self.prefix = None
         self.tags = None
 
@@ -49,7 +50,9 @@ class Export(GlancesExport):
                                             mandatories=['host', 'port',
                                                          'user', 'password',
                                                          'db'],
-                                            options=['prefix', 'tags'])
+                                            options=['protocol',
+                                                     'prefix',
+                                                     'tags'])
         if not self.export_enable:
             sys.exit(2)
 
@@ -61,9 +64,17 @@ class Export(GlancesExport):
         if not self.export_enable:
             return None
 
+        # Correct issue #1530
+        if self.protocol is not None and (self.protocol.lower() == 'https'):
+            ssl = True
+        else:
+            ssl = False
+
         try:
             db = InfluxDBClient(host=self.host,
                                 port=self.port,
+                                ssl=ssl,
+                                verify_ssl=False,
                                 username=self.user,
                                 password=self.password,
                                 database=self.db)
@@ -115,10 +126,13 @@ class Export(GlancesExport):
         if self.prefix is not None:
             name = self.prefix + '.' + name
         # Write input to the InfluxDB database
-        try:
-            self.client.write_points(self._normalize(name, columns, points))
-        except Exception as e:
-            logger.error("Cannot export {} stats to InfluxDB ({})".format(name,
-                                                                          e))
+        if len(points) == 0:
+            logger.debug("Cannot export empty {} stats to InfluxDB".format(name))
         else:
-            logger.debug("Export {} stats to InfluxDB".format(name))
+            try:
+                self.client.write_points(self._normalize(name, columns, points), time_precision="s")
+            except Exception as e:
+                # Log level set to debug instead of error (see: issue #1561)
+                logger.debug("Cannot export {} stats to InfluxDB ({})".format(name, e))
+            else:
+                logger.debug("Export {} stats to InfluxDB".format(name))

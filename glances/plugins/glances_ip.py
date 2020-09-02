@@ -2,7 +2,7 @@
 #
 # This file is part of Glances.
 #
-# Copyright (C) 2018 Nicolargo <nicolas@nicolargo.com>
+# Copyright (C) 2019 Nicolargo <nicolas@nicolargo.com>
 #
 # Glances is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -53,15 +53,15 @@ class Plugin(GlancesPlugin):
     stats is a dict
     """
 
-    def __init__(self, args=None):
+    def __init__(self, args=None, config=None):
         """Init the plugin."""
-        super(Plugin, self).__init__(args=args)
+        super(Plugin, self).__init__(args=args, config=config)
 
         # We want to display the stat in the curse interface
         self.display_curse = True
 
         # Get the public IP address once (not for each refresh)
-        if not self.is_disable():
+        if not self.is_disable() and not import_error_tag:
             self.public_address = PublicIpAddress().get()
 
     @GlancesPlugin._check_decorator
@@ -114,7 +114,7 @@ class Plugin(GlancesPlugin):
         ret = []
 
         # Only process if stats exist and display plugin enable...
-        if not self.stats or self.is_disable():
+        if not self.stats or self.is_disable() or import_error_tag:
             return ret
 
         # Build the string message
@@ -131,7 +131,8 @@ class Plugin(GlancesPlugin):
             ret.append(self.curse_add_line(msg))
         try:
             msg_pub = '{}'.format(self.stats['public_address'])
-        except UnicodeEncodeError:
+        except (UnicodeEncodeError, KeyError):
+            # Add KeyError exception (see https://github.com/nicolargo/glances/issues/1469)
             pass
         else:
             if self.stats['public_address'] is not None:
@@ -147,7 +148,9 @@ class Plugin(GlancesPlugin):
 
         Example: '255.255.255.0' will return 24
         """
-        return sum([int(x) << 8 for x in ip.split('.')]) // 8128
+        # Thanks to @Atticfire
+        # See https://github.com/nicolargo/glances/issues/1417#issuecomment-469894399
+        return sum(bin(int(x)).count('1') for x in ip.split('.'))
 
 
 class PublicIpAddress(object):
@@ -172,7 +175,10 @@ class PublicIpAddress(object):
             if q.qsize() > 0:
                 ip = q.get()
 
-        return ip
+        if ip is None:
+            return None
+
+        return ', '.join(set([x.strip() for x in ip.split(',')]))
 
     def _get_ip_public(self, queue_target, url, json=False, key=None):
         """Request the url service and put the result in the queue_target."""

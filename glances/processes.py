@@ -2,7 +2,7 @@
 #
 # This file is part of Glances.
 #
-# Copyright (C) 2018 Nicolargo <nicolas@nicolargo.com>
+# Copyright (C) 2019 Nicolargo <nicolas@nicolargo.com>
 #
 # Glances is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -21,7 +21,7 @@ import operator
 import os
 
 from glances.compat import iteritems, itervalues, listitems, iterkeys
-from glances.globals import BSD, LINUX, MACOS, SUNOS, WINDOWS
+from glances.globals import BSD, LINUX, MACOS, SUNOS, WINDOWS, WSL
 from glances.timer import Timer, getTimeSinceLastUpdate
 from glances.filter import GlancesFilter
 from glances.logger import logger
@@ -30,7 +30,6 @@ import psutil
 
 
 class GlancesProcesses(object):
-
     """Get processed stats using the psutil library."""
 
     def __init__(self, cache_timeout=60):
@@ -50,8 +49,11 @@ class GlancesProcesses(object):
         self.io_old = {}
 
         # Init stats
-        self.auto_sort = True
-        self._sort_key = 'cpu_percent'
+        self.auto_sort = None
+        self._sort_key = None
+        # Default processes sort key is 'auto'
+        # Can be overwrite from the configuration file (issue#1536) => See glances_processlist.py init
+        self.set_sort_key('auto', auto=True)
         self.processlist = []
         self.reset_processcount()
 
@@ -61,6 +63,28 @@ class GlancesProcesses(object):
 
         # Extended stats for top process is enable by default
         self.disable_extended_tag = False
+
+        # Test if the system can grab io_counters
+        try:
+            p = psutil.Process()
+            p.io_counters()
+        except Exception as e:
+            logger.warning('PsUtil can not grab processes io_counters ({})'.format(e))
+            self.disable_io_counters = True
+        else:
+            logger.debug('PsUtil can grab processes io_counters')
+            self.disable_io_counters = False
+
+        # Test if the system can grab gids
+        try:
+            p = psutil.Process()
+            p.gids()
+        except Exception as e:
+            logger.warning('PsUtil can not grab processes gids ({})'.format(e))
+            self.disable_gids = True
+        else:
+            logger.debug('PsUtil can grab processes gids')
+            self.disable_gids = False
 
         # Maximum number of processes showed in the UI (None if no limit)
         self._max_processes = None
@@ -235,11 +259,9 @@ class GlancesProcesses(object):
         standard_attrs = ['cmdline', 'cpu_percent', 'cpu_times', 'memory_info',
                           'memory_percent', 'name', 'nice', 'pid', 'ppid',
                           'status', 'username', 'status', 'num_threads']
-        # io_counters availability: Linux, BSD, Windows, AIX
-        if not MACOS and not SUNOS:
+        if not self.disable_io_counters:
             standard_attrs += ['io_counters']
-        # gids availability: Unix
-        if not WINDOWS:
+        if not self.disable_gids:
             standard_attrs += ['gids']
 
         # and build the processes stats list (psutil>=5.3.0)
@@ -293,7 +315,8 @@ class GlancesProcesses(object):
                     if LINUX:
                         try:
                             extended['memory_swap'] = sum([v.swap for v in top_process.memory_maps()])
-                        except psutil.NoSuchProcess:
+                        except (psutil.NoSuchProcess, KeyError):
+                            # KeyError catch for issue #1551)
                             pass
                         except (psutil.AccessDenied, NotImplementedError):
                             # NotImplementedError: /proc/${PID}/smaps file doesn't exist
@@ -367,10 +390,14 @@ class GlancesProcesses(object):
         """Get the current sort key."""
         return self._sort_key
 
-    @sort_key.setter
-    def sort_key(self, key):
+    def set_sort_key(self, key, auto=True):
         """Set the current sort key."""
-        self._sort_key = key
+        if key == 'auto':
+            self.auto_sort = True
+            self._sort_key = 'cpu_percent'
+        else:
+            self.auto_sort = auto
+            self._sort_key = key
 
 
 def weighted(value):

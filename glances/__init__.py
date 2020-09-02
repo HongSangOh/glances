@@ -2,7 +2,7 @@
 #
 # This file is part of Glances.
 #
-# Copyright (C) 2018 Nicolargo <nicolas@nicolargo.com>
+# Copyright (C) 2020 Nicolargo <nicolas@nicolargo.com>
 #
 # Glances is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -27,7 +27,7 @@ import signal
 import sys
 
 # Global name
-__version__ = '3.1.0_beta'
+__version__ = '3.1.5'
 __author__ = 'Nicolas Hennion <nicolas@nicolargo.com>'
 __license__ = 'LGPLv3'
 
@@ -43,7 +43,7 @@ except ImportError:
 from glances.logger import logger
 from glances.main import GlancesMain
 from glances.globals import WINDOWS
-
+from glances.timer import Counter
 # Check locale
 try:
     locale.setlocale(locale.LC_ALL, '')
@@ -89,6 +89,8 @@ def start(config, args):
     # Load mode
     global mode
 
+    start_duration = Counter()
+
     if core.is_standalone():
         from glances.standalone import GlancesStandalone as GlancesMode
     elif core.is_client():
@@ -106,6 +108,7 @@ def start(config, args):
     mode = GlancesMode(config=config, args=args)
 
     # Start the main loop
+    logger.debug("Glances started in {} seconds".format(start_duration.get()))
     mode.serve_forever()
 
     # Shutdown

@@ -2,7 +2,7 @@
 #
 # This file is part of Glances.
 #
-# Copyright (C) 2018 Nicolargo <nicolas@nicolargo.com>
+# Copyright (C) 2019 Nicolargo <nicolas@nicolargo.com>
 #
 # Glances is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -88,9 +88,10 @@ class Plugin(GlancesPlugin):
     Only for display.
     """
 
-    def __init__(self, args=None):
+    def __init__(self, args=None, config=None):
         """Init the plugin."""
         super(Plugin, self).__init__(args=args,
+                                     config=config,
                                      stats_init_value=[])
 
         # We want to display the stat in the curse interface
@@ -114,59 +115,48 @@ class Plugin(GlancesPlugin):
         ret = []
 
         # Only process if display plugin enable...
-        if not self.stats and self.is_disable():
+        if not self.stats or self.is_disable():
             return ret
 
         # Build the string message
         # Header
         ret.append(self.curse_add_line(global_message(), "TITLE"))
-        if self.stats:
-            # Header
-            # msg = 'Warning or critical alerts'
-            # ret.append(self.curse_add_line(msg, "TITLE"))
-            # logs_len = glances_events.len()
-            # if logs_len > 1:
-            #     msg = ' (last {} entries)'.format(logs_len)
-            # else:
-            #     msg = ' (one entry)'
-            # ret.append(self.curse_add_line(msg, "TITLE"))
-            # Loop over alerts
-            for alert in self.stats:
-                # New line
-                ret.append(self.curse_new_line())
-                # Start
-                msg = str(datetime.fromtimestamp(alert[0]))
+        # Loop over alerts
+        for alert in self.stats:
+            # New line
+            ret.append(self.curse_new_line())
+            # Start
+            msg = str(datetime.fromtimestamp(alert[0]))
+            ret.append(self.curse_add_line(msg))
+            # Duration
+            if alert[1] > 0:
+                # If finished display duration
+                msg = ' ({})'.format(datetime.fromtimestamp(alert[1]) -
+                                     datetime.fromtimestamp(alert[0]))
+            else:
+                msg = ' (ongoing)'
+            ret.append(self.curse_add_line(msg))
+            ret.append(self.curse_add_line(" - "))
+            # Infos
+            if alert[1] > 0:
+                # If finished do not display status
+                msg = '{} on {}'.format(alert[2], alert[3])
                 ret.append(self.curse_add_line(msg))
-                # Duration
-                if alert[1] > 0:
-                    # If finished display duration
-                    msg = ' ({})'.format(datetime.fromtimestamp(alert[1]) -
-                                         datetime.fromtimestamp(alert[0]))
-                else:
-                    msg = ' (ongoing)'
+            else:
+                msg = str(alert[3])
+                ret.append(self.curse_add_line(msg, decoration=alert[2]))
+            # Min / Mean / Max
+            if self.approx_equal(alert[6], alert[4], tolerance=0.1):
+                msg = ' ({:.1f})'.format(alert[5])
+            else:
+                msg = ' (Min:{:.1f} Mean:{:.1f} Max:{:.1f})'.format(
+                    alert[6], alert[5], alert[4])
+            ret.append(self.curse_add_line(msg))
+            # Top processes
+            top_process = ', '.join([p['name'] for p in alert[9]])
+            if top_process != '':
+                msg = ': {}'.format(top_process)
                 ret.append(self.curse_add_line(msg))
-                ret.append(self.curse_add_line(" - "))
-                # Infos
-                if alert[1] > 0:
-                    # If finished do not display status
-                    msg = '{} on {}'.format(alert[2], alert[3])
-                    ret.append(self.curse_add_line(msg))
-                else:
-                    msg = str(alert[3])
-                    ret.append(self.curse_add_line(msg, decoration=alert[2]))
-                # Min / Mean / Max
-                if self.approx_equal(alert[6], alert[4], tolerance=0.1):
-                    msg = ' ({:.1f})'.format(alert[5])
-                else:
-                    msg = ' (Min:{:.1f} Mean:{:.1f} Max:{:.1f})'.format(
-                        alert[6], alert[5], alert[4])
-                ret.append(self.curse_add_line(msg))
-                # Top processes
-                top_process = ', '.join([p['name'] for p in alert[9]])
-                if top_process != '':
-                    msg = ': {}'.format(top_process)
-                    ret.append(self.curse_add_line(msg))
-                # logger.info(alert)
 
         return ret
 

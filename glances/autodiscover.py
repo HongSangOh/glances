@@ -2,7 +2,7 @@
 #
 # This file is part of Glances.
 #
-# Copyright (C) 2018 Nicolargo <nicolas@nicolargo.com>
+# Copyright (C) 2019 Nicolargo <nicolas@nicolargo.com>
 #
 # Glances is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -209,10 +209,23 @@ class GlancesAutoDiscoverClient(object):
             address_family = socket.getaddrinfo(zeroconf_bind_address, args.port)[0][0]
 
             # Start the zeroconf service
-            self.info = ServiceInfo(
-                zeroconf_type, '{}:{}.{}'.format(hostname, args.port, zeroconf_type),
-                address=socket.inet_pton(address_family, zeroconf_bind_address),
-                port=args.port, weight=0, priority=0, properties={}, server=hostname)
+            try:
+                self.info = ServiceInfo(
+                    zeroconf_type, '{}:{}.{}'.format(
+                        hostname, args.port, zeroconf_type),
+                    address=socket.inet_pton(
+                        address_family, zeroconf_bind_address),
+                    port=args.port, weight=0, priority=0, properties={}, server=hostname)
+            except TypeError:
+                # Manage issue 1663 with breaking change on ServiceInfo method
+                # address (only one address) is replaced by addresses (list of addresses)
+                self.info = ServiceInfo(
+                    zeroconf_type, '{}:{}.{}'.format(
+                        hostname, args.port, zeroconf_type),
+                    addresses=[socket.inet_pton(
+                        address_family, zeroconf_bind_address)],
+                    port=args.port, weight=0, priority=0, properties={}, server=hostname)
+
             try:
                 self.zeroconf.register_service(self.info)
             except socket.error as e:

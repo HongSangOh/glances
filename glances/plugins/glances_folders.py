@@ -2,7 +2,7 @@
 #
 # This file is part of Glances.
 #
-# Copyright (C) 2018 Nicolargo <nicolas@nicolargo.com>
+# Copyright (C) 2019 Nicolargo <nicolas@nicolargo.com>
 #
 # Glances is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -18,10 +18,11 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 """Folder plugin."""
+from __future__ import unicode_literals
 
 import numbers
 
-from glances.compat import nativestr
+from glances.compat import nativestr, n
 from glances.folder_list import FolderList as glancesFolderList
 from glances.plugins.glances_plugin import GlancesPlugin
 from glances.logger import logger
@@ -33,6 +34,7 @@ class Plugin(GlancesPlugin):
     def __init__(self, args=None, config=None):
         """Init the plugin."""
         super(Plugin, self).__init__(args=args,
+                                     config=config,
                                      stats_init_value=[])
         self.args = args
         self.config = config

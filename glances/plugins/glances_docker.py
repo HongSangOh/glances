@@ -2,7 +2,7 @@
 #
 # This file is part of Glances.
 #
-# Copyright (C) 2018 Nicolargo <nicolas@nicolargo.com>
+# Copyright (C) 2019 Nicolargo <nicolas@nicolargo.com>
 #
 # Glances is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -33,10 +33,10 @@ from glances.processes import sort_stats as sort_stats_processes, weighted, glan
 # https://github.com/docker/docker-py
 try:
     import docker
-except ImportError as e:
+except Exception as e:
     import_error_tag = True
     # Display debu message if import KeyError
-    logger.warning("Missing Python Lib ({}), Docker plugin is disabled".format(e))
+    logger.warning("Error loading Docker Python Lib. Docker plugin is disabled ({})".format(e))
 else:
     import_error_tag = False
 
@@ -72,9 +72,10 @@ class Plugin(GlancesPlugin):
     stats is a dict: {'version': {...}, 'containers': [{}, {}]}
     """
 
-    def __init__(self, args=None):
+    def __init__(self, args=None, config=None):
         """Init the plugin."""
         super(Plugin, self).__init__(args=args,
+                                     config=config,
                                      items_history_list=items_history_list)
 
         # The plgin can be disable using: args.disable_docker
@@ -167,6 +168,10 @@ class Plugin(GlancesPlugin):
             except Exception as e:
                 # Correct issue#649
                 logger.error("{} plugin - Cannot get Docker version ({})".format(self.plugin_name, e))
+                # We may have lost connection remove version info
+                if 'version' in self.stats:
+                    del self.stats['version']
+                self.stats['containers'] = []
                 return self.stats
 
             # Update current containers list
@@ -176,6 +181,8 @@ class Plugin(GlancesPlugin):
                 containers = self.docker_client.containers.list(all=self._all_tag()) or []
             except Exception as e:
                 logger.error("{} plugin - Cannot get containers list ({})".format(self.plugin_name, e))
+                # We may have lost connection empty the containers list.
+                self.stats['containers'] = []
                 return self.stats
 
             # Start new thread for new container
@@ -312,9 +319,8 @@ class Plugin(GlancesPlugin):
         ret = {}
         # Read the stats
         try:
-            # Do not exist anymore with Docker 1.11 (issue #848)
-            # ret['rss'] = all_stats['memory_stats']['stats']['rss']
-            # ret['cache'] = all_stats['memory_stats']['stats']['cache']
+            ret['rss'] = all_stats['memory_stats']['stats']['rss']
+            ret['cache'] = all_stats['memory_stats']['stats']['cache']
             ret['usage'] = all_stats['memory_stats']['usage']
             ret['limit'] = all_stats['memory_stats']['limit']
             ret['max_usage'] = all_stats['memory_stats']['max_usage']
@@ -653,11 +659,15 @@ class ThreadDockerGrabber(threading.Thread):
 
         Infinite loop, should be stopped by calling the stop() method
         """
-        for i in self._stats_stream:
-            self._stats = i
-            time.sleep(0.1)
-            if self.stopped():
-                break
+        try:
+            for i in self._stats_stream:
+                self._stats = i
+                time.sleep(0.1)
+                if self.stopped():
+                    break
+        except:
+            logger.debug("docker plugin - Exception thrown during run")
+            self.stop()
 
     @property
     def stats(self):

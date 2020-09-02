@@ -2,7 +2,7 @@
 #
 # This file is part of Glances.
 #
-# Copyright (C) 2018 Nicolargo <nicolas@nicolargo.com>
+# Copyright (C) 2019 Nicolargo <nicolas@nicolargo.com>
 #
 # Glances is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -48,6 +48,7 @@ class Plugin(GlancesPlugin):
     def __init__(self, args=None, config=None):
         """Init the plugin."""
         super(Plugin, self).__init__(args=args,
+                                     config=config,
                                      stats_init_value=[])
         self.args = args
         self.config = config
@@ -81,7 +82,7 @@ class Plugin(GlancesPlugin):
             if self._thread is None:
                 thread_is_running = False
             else:
-                thread_is_running = self._thread.isAlive()
+                thread_is_running = self._thread.is_alive()
             if self.timer_ports.finished() and not thread_is_running:
                 # Run ports scanner
                 self._thread = ThreadScanner(self.stats)

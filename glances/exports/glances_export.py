@@ -2,7 +2,7 @@
 #
 # This file is part of Glances.
 #
-# Copyright (C) 2018 Nicolargo <nicolas@nicolargo.com>
+# Copyright (C) 2019 Nicolargo <nicolas@nicolargo.com>
 #
 # Glances is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -34,7 +34,8 @@ class GlancesExport(object):
     """Main class for Glances export IF."""
 
     # For the moment, only thoses plugins can be exported
-    # @TODO: remove this part and make all plugins exportable
+    # @TODO: remove this part and make all plugins exportable (see issue #1556)
+    # @TODO: also make this list configurable by the user (see issue #1443)
     exportable_plugins = ['cpu',
                           'percpu',
                           'load',

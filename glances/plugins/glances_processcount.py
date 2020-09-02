@@ -2,7 +2,7 @@
 #
 # This file is part of Glances.
 #
-# Copyright (C) 2018 Nicolargo <nicolas@nicolargo.com>
+# Copyright (C) 2019 Nicolargo <nicolas@nicolargo.com>
 #
 # Glances is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -47,12 +47,14 @@ class Plugin(GlancesPlugin):
                       'cpu_percent': 'CPU consumption',
                       'memory_percent': 'memory consumption',
                       'cpu_times': 'process time',
+                      'username': 'user name',
                       'name': 'process name',
                       None: 'None'}
 
-    def __init__(self, args=None):
+    def __init__(self, args=None, config=None):
         """Init the plugin."""
         super(Plugin, self).__init__(args=args,
+                                     config=config,
                                      items_history_list=items_history_list)
 
         # We want to display the stat in the curse interface
@@ -138,7 +140,7 @@ class Plugin(GlancesPlugin):
         try:
             sort_human = self.sort_for_human[glances_processes.sort_key]
         except KeyError:
-            sort_human = '?'
+            sort_human = glances_processes.sort_key
         if glances_processes.auto_sort:
             msg = 'sorted automatically'
             ret.append(self.curse_add_line(msg))

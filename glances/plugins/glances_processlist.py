@@ -2,7 +2,7 @@
 #
 # This file is part of Glances.
 #
-# Copyright (C) 2018 Nicolargo <nicolas@nicolargo.com>
+# Copyright (C) 2019 Nicolargo <nicolas@nicolargo.com>
 #
 # Glances is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -91,9 +91,10 @@ class Plugin(GlancesPlugin):
         'name': '[{}]'
     }
 
-    def __init__(self, args=None):
+    def __init__(self, args=None, config=None):
         """Init the plugin."""
         super(Plugin, self).__init__(args=args,
+                                     config=config,
                                      stats_init_value=[])
 
         # We want to display the stat in the curse interface
@@ -114,6 +115,12 @@ class Plugin(GlancesPlugin):
         # Get the maximum PID number
         # Use to optimize space (see https://github.com/nicolargo/glances/issues/959)
         self.pid_max = glances_processes.pid_max
+
+        # Set the default sort key if it is defined in the configuration file
+        if config is not None:
+            if 'processlist' in config.as_dict() and 'sort_key' in config.as_dict()['processlist']:
+                logger.debug('Configuration overwrites processes sort key by {}'.format(config.as_dict()['processlist']['sort_key']))
+                glances_processes.set_sort_key(config.as_dict()['processlist']['sort_key'], False)
 
         # Note: 'glances_processes' is already init in the processes.py script
 

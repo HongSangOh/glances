@@ -2,7 +2,7 @@
 #
 # This file is part of Glances.
 #
-# Copyright (C) 2018 Nicolargo <nicolas@nicolargo.com>
+# Copyright (C) 2019 Nicolargo <nicolas@nicolargo.com>
 #
 # Glances is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -39,9 +39,9 @@ class Plugin(GlancesPlugin):
     stats is a dict (see pymdstat documentation)
     """
 
-    def __init__(self, args=None):
+    def __init__(self, args=None, config=None):
         """Init the plugin."""
-        super(Plugin, self).__init__(args=args)
+        super(Plugin, self).__init__(args=args, config=config)
 
         # We want to display the stat in the curse interface
         self.display_curse = True
@@ -83,7 +83,7 @@ class Plugin(GlancesPlugin):
         ret = []
 
         # Only process if stats exist...
-        if not self.stats:
+        if not self.stats or self.is_disable():
             return ret
 
         # Max size for the interface name

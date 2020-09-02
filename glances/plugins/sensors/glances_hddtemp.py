@@ -2,7 +2,7 @@
 #
 # This file is part of Glances.
 #
-# Copyright (C) 2018 Nicolargo <nicolas@nicolargo.com>
+# Copyright (C) 2019 Nicolargo <nicolas@nicolargo.com>
 #
 # Glances is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -33,13 +33,20 @@ class Plugin(GlancesPlugin):
     stats is a list
     """
 
-    def __init__(self, args=None):
+    def __init__(self, args=None, config=None):
         """Init the plugin."""
         super(Plugin, self).__init__(args=args,
+                                     config=config,
                                      stats_init_value=[])
 
         # Init the sensor class
-        self.glancesgrabhddtemp = GlancesGrabHDDTemp(args=args)
+        hddtemp_host = self.get_conf_value("host",
+                                           default=["127.0.0.1"])[0]
+        hddtemp_port = int(self.get_conf_value("port",
+                                               default="7634"))
+        self.hddtemp = GlancesGrabHDDTemp(args=args,
+                                          host=hddtemp_host,
+                                          port=hddtemp_port)
 
         # We do not want to display the stat in a dedicated area
         # The HDD temp is displayed within the sensors plugin
@@ -54,7 +61,7 @@ class Plugin(GlancesPlugin):
 
         if self.input_method == 'local':
             # Update stats using the standard system lib
-            stats = self.glancesgrabhddtemp.get()
+            stats = self.hddtemp.get()
 
         else:
             # Update stats using SNMP

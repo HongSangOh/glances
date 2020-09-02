@@ -3,7 +3,7 @@
 #
 # Glances - An eye on your system
 #
-# Copyright (C) 2018 Nicolargo <nicolas@nicolargo.com>
+# Copyright (C) 2019 Nicolargo <nicolas@nicolargo.com>
 #
 # Glances is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -216,6 +216,15 @@ class TestGlances(unittest.TestCase):
         self.assertIsInstance(req.json(), dict)
         self.assertIsInstance(req.json()['system'], list)
         self.assertTrue(len(req.json()['system']) > 1)
+
+    def test_011_issue1401(self):
+        """Check issue #1401."""
+        method = "network/interface_name"
+        print('INFO: [TEST_011] Issue #1401')
+        req = self.http_get("%s/%s" % (URL, method))
+        self.assertTrue(req.ok)
+        self.assertIsInstance(req.json(), dict)
+        self.assertIsInstance(req.json()['interface_name'], list)
 
     def test_999_stop_server(self):
         """Stop the Glances Web Server."""

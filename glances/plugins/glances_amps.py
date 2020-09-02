@@ -2,7 +2,7 @@
 #
 # This file is part of Glances.
 #
-# Copyright (C) 2018 Nicolargo <nicolas@nicolargo.com>
+# Copyright (C) 2019 Nicolargo <nicolas@nicolargo.com>
 #
 # Glances is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -30,6 +30,7 @@ class Plugin(GlancesPlugin):
     def __init__(self, args=None, config=None):
         """Init the plugin."""
         super(Plugin, self).__init__(args=args,
+                                     config=config,
                                      stats_init_value=[])
         self.args = args
         self.config = config
@@ -56,7 +57,9 @@ class Plugin(GlancesPlugin):
                               'timer': v.time_until_refresh(),
                               'count': v.count(),
                               'countmin': v.count_min(),
-                              'countmax': v.count_max()})
+                              'countmax': v.count_max(),
+                              'regex': v.regex() is not None},
+                              )
         else:
             # Not available in SNMP mode
             pass
@@ -102,7 +105,7 @@ class Plugin(GlancesPlugin):
             # Display AMP
             first_column = '{}'.format(m['name'])
             first_column_style = self.get_alert(m['count'], m['countmin'], m['countmax'])
-            second_column = '{}'.format(m['count'])
+            second_column = '{}'.format(m['count'] if m['regex'] else '')
             for l in m['result'].split('\n'):
                 # Display first column with the process name...
                 msg = '{:<16} '.format(first_column)

@@ -12,10 +12,14 @@ following:
     [influxdb]
     host=localhost
     port=8086
+    protocol=http
     user=root
     password=root
     db=glances
-    tags=foo:bar,spam:eggs
+    # Tags will be added for all measurements
+    #tags=foo:bar,spam:eggs
+    # You can also use dynamic values
+    #tags=system:`uname -s`
 
 and run Glances with:
 
@@ -26,6 +30,8 @@ and run Glances with:
 Glances generates a lot of columns, e.g., if you have many running
 Docker containers, so you should use the ``tsm1`` engine in the InfluxDB
 configuration file (no limit on columns number).
+
+Note: if you want to use SSL, please set 'protocol=https'.
 
 Grafana
 -------
